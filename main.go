@@ -1,6 +1,7 @@
 package main
 
 import (
+	"database/sql"
 	"fmt"
 	"log"
 	"net/http"
@@ -9,7 +10,14 @@ import (
 	"github.com/go-chi/chi/v5"
 	"github.com/go-chi/cors"
 	"github.com/joho/godotenv"
+	"github.com/lucas271/GoSimpleApi/internal/database"
+
+	_ "github.com/lib/pq"
 )
+
+type apiConfig struct {
+	DB *database.Queries
+}
 
 func main() {
 
@@ -18,6 +26,18 @@ func main() {
 	godotenv.Load()
 
 	portString := os.Getenv("PORT")
+	DBURL := os.Getenv("DB_URL")
+
+	if DBURL == "" {
+		log.Fatal("PORT IS NOT FOUND IN THE ENVIROMENT")
+	}
+
+	conn, err := sql.Open("mysql", DBURL)
+	if err != nil {
+		log.Fatal("can't connect to database")
+	}
+
+	router := chi.NewRouter(conn)
 
 	if portString == "" {
 		log.Fatal("PORT is not found in the enviroment")
@@ -48,9 +68,9 @@ func main() {
 
 	log.Printf("Server running on port %s", portString)
 
-	err := srv.ListenAndServe()
+	err2 := srv.ListenAndServe()
 
-	if err != nil {
+	if err2 != nil {
 		log.Fatal(err)
 	}
 
