@@ -12,7 +12,7 @@ import (
 	"github.com/joho/godotenv"
 	"github.com/lucas271/GoSimpleApi/internal/database"
 
-	_ "github.com/lib/pq"
+	_ "github.com/go-sql-driver/mysql"
 )
 
 type apiConfig struct {
@@ -20,9 +20,6 @@ type apiConfig struct {
 }
 
 func main() {
-
-	fmt.Println("hiiii")
-
 	godotenv.Load()
 
 	portString := os.Getenv("PORT")
@@ -34,16 +31,20 @@ func main() {
 
 	conn, err := sql.Open("mysql", DBURL)
 	if err != nil {
-		log.Fatal("can't connect to database")
+		log.Fatal("can't connect to database", err)
 	}
 
-	router := chi.NewRouter(conn)
+	router := chi.NewRouter()
 
 	if portString == "" {
 		log.Fatal("PORT is not found in the enviroment")
 	}
 
-	router := chi.NewRouter()
+	queries := database.New(conn)
+
+	apiCfg := apiConfig{
+		DB: queries,
+	}
 
 	router.Use(cors.Handler(cors.Options{
 		AllowedOrigins:   []string{"http://*", "https://*"},
@@ -58,7 +59,7 @@ func main() {
 
 	v1Router.Get("/healthz", handleReadiness)
 	v1Router.Get("/err", handleErr)
-
+	v1Router.Post("/users", apiCfg.handleCreateUser)
 	router.Mount("/v1", v1Router)
 
 	srv := &http.Server{

@@ -7,6 +7,7 @@ package database
 
 import (
 	"context"
+	"time"
 )
 
 const createUser = `-- name: CreateUser :one
@@ -14,7 +15,13 @@ const createUser = `-- name: CreateUser :one
 select id, created_at, updated_at, name from users
 `
 
-func (q *Queries) CreateUser(ctx context.Context) (User, error) {
+type CreateUserParams struct{
+	CreatedAt time.Time
+	UpdatedAt time.Time
+	Name string
+}
+
+func (q *Queries) CreateUser(ctx context.Context, arg CreateUserParams) (User, error) {
 	row := q.db.QueryRowContext(ctx, createUser)
 	var i User
 	err := row.Scan(
